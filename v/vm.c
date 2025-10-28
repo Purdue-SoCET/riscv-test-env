@@ -24,9 +24,8 @@ extern volatile uint64_t fromhost;
 
 static void do_tohost(uint64_t tohost_value)
 {
-  while (tohost)
-    fromhost = 0;
   tohost = tohost_value;
+  asm volatile ("fence.i" : : :);
 }
 
 #define kaa2pa(aa) ((uintptr_t)(aa) & (uintptr_t)(~(-MEGAPAGE_SIZE)) | (uintptr_t)(DRAM_BASE))
@@ -61,8 +60,11 @@ static void cputchar(int x)
 
 static void cputstring(const char* s)
 {
-  while (*s)
+  size_t len = strlen(s);
+  for (size_t i = 0; i < len; i++) {
     cputchar(*s++);
+  }
+  cputchar('\n');
 }
 
 static void terminate(int code)
@@ -212,8 +214,9 @@ void handle_trap(trapframe_t* tf)
   {
     int n = tf->gpr[10];
 
-    for (long i = 1; i < MAX_TEST_PAGES; i++)
-      evict(i*PGSIZE);
+    // ICEBOX(wrcunnin): figure out if we REALLY need this...
+    // for (long i = 1; i < MAX_TEST_PAGES; i++)
+    //   evict(i*PGSIZE);
 
     terminate(n);
   }
@@ -244,12 +247,14 @@ static void coherence_torture()
   uint64_t random = ENTROPY;
   while (1) {
     uintptr_t paddr = DRAM_BASE + ((random % (2 * (MAX_TEST_PAGES + 1) * PGSIZE)) & -4);
-#ifdef __riscv_atomic
-    if (random & 1) // perform a no-op write
-      asm volatile ("amoadd.w zero, zero, (%0)" :: "r"(paddr));
-    else // perform a read
-#endif
-      asm volatile ("lw zero, (%0)" :: "r"(paddr));
+    // ICEBOX(anyone): revert when atomic support is added
+// #ifdef __riscv_atomic
+//     if (random & 1) // perform a no-op write
+//       asm volatile ("amoadd.w zero, zero, (%0)" :: "r"(paddr));
+//     else // perform a read
+// #endif
+//       asm volatile ("lw zero, (%0)" :: "r"(paddr));
+    asm volatile ("lw zero, (%0)" :: "r"(paddr));
     random = lfsr63(random);
   }
 }

@@ -169,7 +169,7 @@
 
 #define RISCV_MULTICORE_DISABLE                                         \
   csrr a0, mhartid;                                                     \
-  1: bnez a0, 1b
+  1: bnez a0, _halt
 
 #define EXTRA_TVEC_USER
 #define EXTRA_TVEC_MACHINE
@@ -190,6 +190,9 @@ _start:                                                                 \
         /* reset vector */                                              \
         j reset_vector;                                                 \
         .align 2;                                                       \
+_halt:                                                                  \
+        j _halt;                                                        \
+        .align 4;                                                       \
 trap_vector:                                                            \
         /* test whether the test came from pass/fail */                 \
         csrr t5, mcause;                                                \
@@ -215,11 +218,11 @@ handle_exception:                                                       \
   write_tohost:                                                         \
         sw TESTNUM, tohost, t5;                                         \
         sw zero, tohost + 4, t5;                                        \
+        fence.i;                                                        \
         j write_tohost;                                                 \
 reset_vector:                                                           \
         INIT_XREG;                                                      \
         RISCV_MULTICORE_DISABLE;                                        \
-        INIT_RNMI;                                                      \
         INIT_SATP;                                                      \
         INIT_PMP;                                                       \
         DELEGATE_NO_TRAPS;                                              \
@@ -292,5 +295,13 @@ reset_vector:                                                           \
         .align 4; .global begin_signature; begin_signature:
 
 #define RVTEST_DATA_END .align 4; .global end_signature; end_signature:
+
+//-----------------------------------------------------------------------
+// AMO Emulation Macro
+//-----------------------------------------------------------------------
+
+#define RVTEST_WANT_AMO_EMU                                                                        \
+    li sp, 0x90000000;                                                                            \
+
 
 #endif

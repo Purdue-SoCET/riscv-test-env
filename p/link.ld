@@ -13,5 +13,7 @@ SECTIONS
   .data : { *(.data) }
   .bss : { *(.bss) }
   _end = .;
+
+  PROVIDE(fromhost = tohost + 64);
 }
 

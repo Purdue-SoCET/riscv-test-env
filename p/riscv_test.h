@@ -226,6 +226,7 @@ handle_exception:                                                       \
         j write_tohost;                                                 \
 reset_vector:                                                           \
         INIT_XREG;                                                      \
+        RISCV_MULTICORE_DISABLE;                                        \
         INIT_SATP;                                                      \
         INIT_PMP;                                                       \
         DELEGATE_NO_TRAPS;                                              \
@@ -248,7 +249,6 @@ reset_vector:                                                           \
         init;                                                           \
         EXTRA_INIT;                                                     \
         EXTRA_INIT_TIMER;                                               \
-        RISCV_MULTICORE_DISABLE;                                        \
         la t0, 1f;                                                      \
         csrw mepc, t0;                                                  \
         csrr a0, mhartid;                                               \

@@ -42,20 +42,7 @@ static uint64_t lfsr63(uint64_t x)
 
 static void cputchar(int x)
 {
-#if __riscv_xlen == 32
-  // HTIF devices are not supported on RV32, so proxy a write system call
-  volatile uint64_t syscall_struct[8];
-  volatile int buff = x;
-  syscall_struct[0] = SYS_write;
-  syscall_struct[1] = 1;
-  syscall_struct[2] = kaa2pa(&buff);
-  syscall_struct[3] = 1;
-  do_tohost(kaa2pa(&syscall_struct));
-  // Wait for response as struct has to be read by HTIF
-  while(!fromhost);
-#else
   do_tohost(0x0101000000000000 | (unsigned char)x);
-#endif
 }
 
 static void cputstring(const char* s)

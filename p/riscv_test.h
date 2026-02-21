@@ -216,8 +216,12 @@ handle_exception:                                                       \
         /* some unhandlable exception occurred */                       \
   1:    ori TESTNUM, TESTNUM, 1337;                                     \
   write_tohost:                                                         \
-        sw TESTNUM, tohost, t5;                                         \
-        sw zero, tohost + 4, t5;                                        \
+        csrr t0, mhartid;                                               \
+        slli t0, t0, 3;                                                 \
+        la t1, tohost;                                                  \
+        add t0, t0, t1;                                                 \
+        sw TESTNUM, 0(t0);                                              \
+        sw zero, 4(t0);                                                 \
         fence.i;                                                        \
         j write_tohost;                                                 \
 reset_vector:                                                           \
@@ -302,6 +306,5 @@ reset_vector:                                                           \
 
 #define RVTEST_WANT_AMO_EMU                                                                        \
     li sp, 0x90000000;                                                                            \
-
 
 #endif
